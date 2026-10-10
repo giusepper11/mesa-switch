@@ -21,6 +21,7 @@ nvk_files = files(
   'nvk_descriptor_set.c',
   'nvk_descriptor_set_layout.c',
   'nvk_descriptor_set_layout.h',
+  'nvk_descriptor_set_ubo.h',
   'nvk_descriptor_table.c',
   'nvk_descriptor_table.h',
   'nvk_descriptor_types.h',
@@ -357,6 +358,16 @@ _dev_icd = custom_target(
 devenv.append('VK_DRIVER_FILES', _dev_icd.full_path())
 
 if with_tests and not with_platform_android
+  test(
+    'nvk_descriptor_set_ubo',
+    executable(
+      'test_nvk_descriptor_set_ubo',
+      files('test_nvk_descriptor_set_ubo.c'),
+      dependencies : [nvk_deps],
+      link_with : [libnvk],
+    ),
+    suite : ['nouveau'],
+  )
   test(
     'nvk_mme',
     executable(
