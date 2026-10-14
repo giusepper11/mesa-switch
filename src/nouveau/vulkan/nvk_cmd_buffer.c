@@ -7,6 +7,7 @@
 #include "nvk_buffer.h"
 #include "nvk_cmd_pool.h"
 #include "nvk_descriptor_set_layout.h"
+#include "nvk_descriptor_set_ubo.h"
 #include "nvk_descriptor_delta.h"
 #include "nvk_device.h"
 #include "nvk_device_memory.h"
@@ -1768,6 +1769,21 @@ nvk_cmd_buffer_get_cbuf_addr(struct nvk_cmd_buffer *cmd,
    }
 
    case NVK_CBUF_TYPE_UBO_DESC: {
+#ifdef HAVE_SWITCH_PLATFORM
+      /* Experimental early consumption; preserve GPU resolution unless
+       * the complete ordinary set passes the shared host-tested gate.
+       */
+      if (shader->info.stage == MESA_SHADER_FRAGMENT &&
+          desc->sets[cbuf->desc_set].type == NVK_DESCRIPTOR_SET_TYPE_SET &&
+          debug_get_bool_option("NVK_SWITCH_CPU_RESOLVE_UBO", false)) {
+         const struct nvk_descriptor_set *set = desc->sets[cbuf->desc_set].set;
+         if (set != NULL &&
+             nvk_descriptor_set_try_cpu_ubo(pdev, set->layout, set->map,
+                                           set->size_B, cbuf->desc_offset,
+                                           addr_out))
+            return true;
+      }
+#endif
       if (desc->sets[cbuf->desc_set].type != NVK_DESCRIPTOR_SET_TYPE_PUSH)
          return false;
 
